@@ -1,10 +1,3 @@
-//
-//  SystemInfoKit.swift
-//  NotchBar
-//
-//  Created by Navtoj Chahal on 2024-09-05.
-//
-
 import SystemInfoKit
 
 private enum DetailDataUnit : String {

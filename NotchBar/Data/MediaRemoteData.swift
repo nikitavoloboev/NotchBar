@@ -1,10 +1,3 @@
-//
-//  MediaRemoteData.swift
-//  NotchBar
-//
-//  Created by Navtoj Chahal on 2024-09-09.
-//
-
 #warning("TODO: Split into separate files.")
 
 import AppKit

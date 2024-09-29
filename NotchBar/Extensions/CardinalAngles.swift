@@ -1,10 +1,3 @@
-//
-//  CardinalAngles.swift
-//  NotchBar
-//
-//  Created by Navtoj Chahal on 2024-09-06.
-//
-
 import SwiftUI
 
 extension Angle {

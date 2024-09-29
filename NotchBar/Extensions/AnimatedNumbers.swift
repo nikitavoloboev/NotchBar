@@ -1,10 +1,3 @@
-//
-//  AnimatedNumbers.swift
-//  NotchBar
-//
-//  Created by Navtoj Chahal on 2024-09-07.
-//
-
 import SwiftUI
 
 extension View {
