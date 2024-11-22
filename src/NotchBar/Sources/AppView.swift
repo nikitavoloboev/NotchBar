@@ -1,111 +1,136 @@
 import SwiftUI
 
-// TODO: hide when under menu bar
 struct AppView: View {
-	@State var size: CGSize = .zero
-	var body: some View {
-		VStack(spacing: 0) {
-			if SystemState.shared.isMenuBarHidden,
-			   let notch = NSScreen.builtIn.notch {
-				HStack(spacing: notch.width) {
-                    Spacer()
-                    if !AppState.shared.todo.isEmpty {
-                        Text(AppState.shared.todo)
-                            .lineLimit(1)
-                            .foregroundStyle(.gray)
-                    }
-                    // pushes it to left
-				}
-				.frame(maxWidth: .infinity, maxHeight: NSScreen.builtIn.notch?.height ?? 31.5)
-				.padding(.horizontal)
-				.background(.black)
-				.environment(\.colorScheme, .dark)
-				.zIndex(1) // above window card
-			}
-			Group {
-				// Notch Requirement Override
-				if NSScreen.builtIn.notch == nil {
-					HStack {
-						HStack(spacing: 0) {
-							Text("NotchBar")
-								.bold()
-							Text(" requires a screen with a notch.")
-						}
-						Button("Quit App", role: .destructive) {
-							NSApp.terminate(self)
-						}
-					}
-					.padding()
-				} else if !SystemState.shared.isMenuBarHidden {
-					// Menu Bar Hidden Override
-					VStack {
-						HStack {
-							HStack(spacing: 0) {
-								Text("NotchBar")
-									.bold()
-								Text(" is hidden under the macOS menu bar.")
-									.frame(maxWidth: .infinity, alignment: .leading)
-							}
-							Button("Change Setting", role: .destructive) {
-								if let url = URL(string: "x-apple.systempreferences:com.apple.ControlCenter-Settings.extension") {
-									NSWorkspace.shared.open(url)
-								}
-							}
-						}
-						.frame(maxWidth: size.width)
-						HStack {
-							Text("Automatically hide and show the menu bar")
-								.frame(maxWidth: .infinity, alignment: .leading)
-							HStack(spacing: 4) {
-								Text(SystemState.shared.menuBarAutoHide.rawValue)
-								Image(systemSymbol: .chevronUpChevronDown)
-									.padding(2)
-									.background(.quaternary.opacity(0.6))
-									.roundedCorners(4)
-							}
-						}
-						.padding(.horizontal, 10)
-						.frame(width: 458, height: 36)
-						.background(.quinary)
-						.roundedCorners()
-						.onSizeChange(sync: $size)
-					}
-					.padding()
-				} else {
-					AppState.shared.card?.view
-				}
-			}
-			.background(.background)
-			.roundedCorners(color: .gray.opacity(0.4))
-			.modifier(DynamicCardShadow())
-			.transition(
-				.blurReplace
-					.animation(.default)
-			)
-			.frame(maxWidth: .infinity, maxHeight: .infinity)
-#if DEBUG
-			.border(.blue)
-#endif
-			.padding()
-			// TODO: only if inverted top corners
-			.padding(.horizontal, 10)
-			.padding(.bottom, 10)
-		}
-		.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-	}
+    private struct Constants {
+        static let shadowRadius: CGFloat = 20
+        static let shadowOpacity: CGFloat = 0.67
+        static let menuBarFrameWidth: CGFloat = 458
+        static let menuBarFrameHeight: CGFloat = 36
+    }
+
+    @State private var size: CGSize = .zero
+
+    var body: some View {
+        VStack(spacing: 0) {
+            notchView
+            mainContent
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    @ViewBuilder
+    private var notchView: some View {
+        if SystemState.shared.isMenuBarHidden,
+            let notch = NSScreen.builtIn.notch
+        {
+            HStack {
+                Spacer()
+                if !AppState.shared.todo.isEmpty {
+                    Text(AppState.shared.todo)
+                        .lineLimit(1)
+                        .foregroundStyle(.gray)
+                }
+            }
+            .frame(height: notch.height)
+            .padding(.horizontal)
+            .background(.black)
+            .environment(\.colorScheme, .dark)
+        }
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
+        Group {
+            if NSScreen.builtIn.notch == nil {
+                noNotchView
+            } else if !SystemState.shared.isMenuBarHidden {
+                menuBarHiddenView
+            } else {
+                AppState.shared.card?.view
+            }
+        }
+        .background(.background)
+        .roundedCorners(color: .gray.opacity(0.4))
+        .shadow(
+            color: colorScheme == .dark
+                ? .black.opacity(Constants.shadowOpacity) : .gray,
+            radius: Constants.shadowRadius
+        )
+        .padding([.horizontal, .bottom], 10)
+        .padding()
+    }
+
+    @ViewBuilder
+    private var noNotchView: some View {
+        HStack {
+            Text("NotchBar")
+                .bold() + Text(" requires a screen with a notch.")
+
+            Button("Quit App", role: .destructive) {
+                NSApp.terminate(self)
+            }
+        }
+        .padding()
+    }
+
+    @ViewBuilder
+    private var menuBarHiddenView: some View {
+        VStack {
+            HStack {
+                HStack(spacing: 0) {
+                    Text("NotchBar")
+                        .bold()
+                    Text(" is hidden under the macOS menu bar.")
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button("Change Setting", role: .destructive) {
+                    openSystemPreferences()
+                }
+            }
+            .frame(maxWidth: size.width)
+
+            menuBarSettingsView
+        }
+        .padding()
+    }
+
+    @ViewBuilder
+    private var menuBarSettingsView: some View {
+        HStack {
+            Text("Automatically hide and show the menu bar")
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 4) {
+                Text(SystemState.shared.menuBarAutoHide.rawValue)
+                Image(systemSymbol: .chevronUpChevronDown)
+                    .padding(2)
+                    .background(.quaternary.opacity(0.6))
+                    .roundedCorners(4)
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(
+            width: Constants.menuBarFrameWidth,
+            height: Constants.menuBarFrameHeight
+        )
+        .background(.quinary)
+        .roundedCorners()
+        .onSizeChange(sync: $size)
+    }
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private func openSystemPreferences() {
+        if let url = URL(
+            string:
+                "x-apple.systempreferences:com.apple.ControlCenter-Settings.extension"
+        ) {
+            NSWorkspace.shared.open(url)
+        }
+    }
 }
 
 #Preview {
-	AppView()
-}
-
-private struct DynamicCardShadow: ViewModifier {
-	@Environment(\.colorScheme) var colorScheme
-	func body(content: Content) -> some View {
-		if colorScheme == .dark {
-			content.shadow(color: .black.opacity(1 - 0.33), radius: 20)
-		} else {
-			content.shadow(radius: 20)
-		}
-	}
+    AppView()
 }
