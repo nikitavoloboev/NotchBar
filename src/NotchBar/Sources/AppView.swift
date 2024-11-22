@@ -1,92 +1,29 @@
 import SwiftUI
 
 // TODO: hide when under menu bar
-
 struct AppView: View {
-
 	@State var size: CGSize = .zero
-
 	var body: some View {
-
-		// App Container
-
 		VStack(spacing: 0) {
-
-			// Notch Bar
-
 			if SystemState.shared.isMenuBarHidden,
 			   let notch = NSScreen.builtIn.notch {
 				HStack(spacing: notch.width) {
-					// TODO: keep widgets within bounds w/ ViewThatFits?
-
-					// Widgets - Left
-
-					HStack {
-						WidgetView<SystemInfoPrimary, Never>(primary: SystemInfoPrimary.init)
-					}
-#if DEBUG
-					.border(.red)
-#endif
-					.frame(maxWidth: notch.minX, alignment: .leading)
-#if DEBUG
-					.border(.blue)
-#endif
-
-					// Widgets - Right
-
-					HStack {
-						WidgetView(
-							primary: MediaPrimary.init,
-							secondary: MediaSecondary.init,
-							overlay: .leading
-						)
-						HStack {
-
-							// Todo Widget Override
-
-							if !AppState.shared.todo.isEmpty {
-								Text(AppState.shared.todo)
-									.lineLimit(1)
-							} else {
-								WidgetView<ActiveAppPrimary, Never>(primary: ActiveAppPrimary.init)
-							}
-						}
-#if DEBUG
-						.border(.green)
-#endif
-						.frame(maxWidth: .infinity, alignment: .trailing)
-#if DEBUG
-						.border(.yellow)
-#endif
-					}
-//					.border(.red)
-					.frame(maxWidth: notch.minX, alignment: .leading)
-//					.border(.blue)
+                    Spacer()
+                    if !AppState.shared.todo.isEmpty {
+                        Text(AppState.shared.todo)
+                            .lineLimit(1)
+                            .foregroundStyle(.gray)
+                    }
+                    // pushes it to left
 				}
 				.frame(maxWidth: .infinity, maxHeight: NSScreen.builtIn.notch?.height ?? 31.5)
 				.padding(.horizontal)
 				.background(.black)
 				.environment(\.colorScheme, .dark)
 				.zIndex(1) // above window card
-
-				// Top Screen Corners
-
-				Rectangle()
-#if DEBUG
-					.fill(.red)
-#else
-					.fill(.black)
-#endif
-					.frame(height: 10)
-					.clipShape(InvertedBottomCorners(radius: 10))
 			}
-
-			// Window Card
-
 			Group {
-
 				// Notch Requirement Override
-
 				if NSScreen.builtIn.notch == nil {
 					HStack {
 						HStack(spacing: 0) {
@@ -100,9 +37,7 @@ struct AppView: View {
 					}
 					.padding()
 				} else if !SystemState.shared.isMenuBarHidden {
-
 					// Menu Bar Hidden Override
-
 					VStack {
 						HStack {
 							HStack(spacing: 0) {
