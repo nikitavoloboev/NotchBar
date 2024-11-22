@@ -1,25 +1,24 @@
 import SwiftUI
 
+private enum Constants {
+    static let shadowRadius: CGFloat = 20
+    static let shadowOpacity: CGFloat = 0.67
+    static let menuBarFrameWidth: CGFloat = 458
+    static let menuBarFrameHeight: CGFloat = 36
+}
+
 struct AppView: View {
-    private struct Constants {
-        static let shadowRadius: CGFloat = 20
-        static let shadowOpacity: CGFloat = 0.67
-        static let menuBarFrameWidth: CGFloat = 458
-        static let menuBarFrameHeight: CGFloat = 36
-    }
-
-    @State private var size: CGSize = .zero
-
     var body: some View {
         VStack(spacing: 0) {
-            notchView
-            mainContent
+            NotchView()
+            MainContentView()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
+}
 
-    @ViewBuilder
-    private var notchView: some View {
+private struct NotchView: View {
+    var body: some View {
         if SystemState.shared.isMenuBarHidden,
             let notch = NSScreen.builtIn.notch
         {
@@ -37,14 +36,17 @@ struct AppView: View {
             .environment(\.colorScheme, .dark)
         }
     }
+}
 
-    @ViewBuilder
-    private var mainContent: some View {
+private struct MainContentView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
         Group {
             if NSScreen.builtIn.notch == nil {
-                noNotchView
+                NoNotchView()
             } else if !SystemState.shared.isMenuBarHidden {
-                menuBarHiddenView
+                MenuBarHiddenView()
             } else {
                 AppState.shared.card?.view
             }
@@ -59,55 +61,64 @@ struct AppView: View {
         .padding([.horizontal, .bottom], 10)
         .padding()
     }
+}
 
-    @ViewBuilder
-    private var noNotchView: some View {
+private struct NoNotchView: View {
+    var body: some View {
         HStack {
-            Text("NotchBar")
-                .bold() + Text(" requires a screen with a notch.")
-
+            HStack(spacing: 0) {
+                Text("NotchBar").bold()
+                Text(" requires a screen with a notch.")
+            }
             Button("Quit App", role: .destructive) {
                 NSApp.terminate(self)
             }
         }
         .padding()
     }
+}
 
-    @ViewBuilder
-    private var menuBarHiddenView: some View {
+private struct MenuBarHiddenView: View {
+    @State private var size: CGSize = .zero
+
+    var body: some View {
         VStack {
-            HStack {
-                HStack(spacing: 0) {
-                    Text("NotchBar")
-                        .bold()
-                    Text(" is hidden under the macOS menu bar.")
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Button("Change Setting", role: .destructive) {
-                    openSystemPreferences()
-                }
-            }
-            .frame(maxWidth: size.width)
-
-            menuBarSettingsView
+            titleRow
+            MenuBarSettingsView(size: size)
         }
         .padding()
     }
 
-    @ViewBuilder
-    private var menuBarSettingsView: some View {
+    private var titleRow: some View {
+        HStack {
+            Text("NotchBar").bold()
+                + Text(" is hidden under the macOS menu bar.")
+            Spacer()
+            Button("Change Setting", role: .destructive) {
+                openSystemPreferences()
+            }
+        }
+        .frame(maxWidth: size.width)
+    }
+
+    private func openSystemPreferences() {
+        if let url = URL(
+            string:
+                "x-apple.systempreferences:com.apple.ControlCenter-Settings.extension"
+        ) {
+            NSWorkspace.shared.open(url)
+        }
+    }
+}
+
+private struct MenuBarSettingsView: View {
+    let size: CGSize
+
+    var body: some View {
         HStack {
             Text("Automatically hide and show the menu bar")
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-            HStack(spacing: 4) {
-                Text(SystemState.shared.menuBarAutoHide.rawValue)
-                Image(systemSymbol: .chevronUpChevronDown)
-                    .padding(2)
-                    .background(.quaternary.opacity(0.6))
-                    .roundedCorners(4)
-            }
+            settingsIndicator
         }
         .padding(.horizontal, 10)
         .frame(
@@ -116,17 +127,16 @@ struct AppView: View {
         )
         .background(.quinary)
         .roundedCorners()
-        .onSizeChange(sync: $size)
+        .onSizeChange(sync: .constant(size))
     }
 
-    @Environment(\.colorScheme) private var colorScheme
-
-    private func openSystemPreferences() {
-        if let url = URL(
-            string:
-                "x-apple.systempreferences:com.apple.ControlCenter-Settings.extension"
-        ) {
-            NSWorkspace.shared.open(url)
+    private var settingsIndicator: some View {
+        HStack(spacing: 4) {
+            Text(SystemState.shared.menuBarAutoHide.rawValue)
+            Image(systemSymbol: .chevronUpChevronDown)
+                .padding(2)
+                .background(.quaternary.opacity(0.6))
+                .roundedCorners(4)
         }
     }
 }
